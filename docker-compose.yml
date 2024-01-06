@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/app
+      - ./data/web:/vol/web
+    environment:
+      - SECRET_KEY=devsecretkey    #make sure to don't add space after = o.w things will get mess up
+      - DEBUG=1
+      - DB_HOST=db
+      - DB_NAME=devdb
+      - DB_USER=devuser
+      - DB_PASS=changeme
+    depends_on:
+      - db       #it will setup a dependency from app container to db container 
+                 # this basically demonstrates 2 things: db container should start before the app container
+                 # there should be a n/w connection set up the app and the db container
+  db:
+    image: postgres:13-alpine #this will create a new img "postgres:13-alpine", which will be pulled automatically from docker public hub repo
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=changeme
