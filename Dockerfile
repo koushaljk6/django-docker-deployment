@@ -5,6 +5,7 @@ ENV PYTHONUNBUFFERED 1
 
 COPY ./requirements.txt /requirements.txt
 COPY ./app /app
+COPY ./scripts /scripts
 
 WORKDIR /app
 EXPOSE 8000
@@ -22,7 +23,7 @@ RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \                  
     apk add --update --no-cache postgresql-client && \   
     apk add --update --no-cache --virtual .tmp-deps \      
-        build-base postgresql-dev musl-dev && \          
+        build-base postgresql-dev musl-dev linux-headers && \          
     /py/bin/pip install -r /requirements.txt && \
     apk del .tmp-deps && \
     adduser --disabled-password --no-create-home app && \
@@ -32,8 +33,16 @@ RUN python -m venv /py && \
     #the r basically says recursive so any sub directory there assign it to the app user
     chown -R app:app /vol && \
     #the below line will ensure that the owner has access to read write and change anything in those directories
-    chmod -R 755 /vol               
+    chmod -R 755 /vol && \
+    #it makes any script that we copy in via our scripts directory executable so the r is for recursive so it just
+    #means everything inside this directory make it executable and the reason i do it like this is because the chances are
+    #as you work on your application you're going to want to add many different scripts to your main application so i add a
+    #scripts directory here so that you can just add the scripts to this directory they'll automatically be added to your docker image
+    #no mannual work
+    chmod -R +x /scripts            
 
-ENV PATH="/py/bin:$PATH"
+ENV PATH="/scripts:/py/bin:$PATH"
 
 USER app
+
+CMD ["run.sh"]
